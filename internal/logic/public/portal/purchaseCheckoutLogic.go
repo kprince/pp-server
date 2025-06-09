@@ -175,18 +175,20 @@ func (l *PurchaseCheckoutLogic) stripePayment(config string, info *order.Order, 
 		WebhookSecret: stripeConfig.WebhookSecret,
 	})
 	// Calculate the amount with exchange rate
-	amount, err := l.queryExchangeRate("CNY", info.Amount)
-	if err != nil {
-		l.Errorw("[CheckoutOrderLogic] queryExchangeRate error", logger.Field("error", err.Error()))
-		return nil, errors.Wrapf(xerr.NewErrCode(xerr.ERROR), "queryExchangeRate error: %s", err.Error())
-	}
-	convertAmount := int64(amount * 100)
+	// amount, err := l.queryExchangeRate("CNY", info.Amount)
+	// if err != nil {
+	// 	l.Errorw("[CheckoutOrderLogic] queryExchangeRate error", logger.Field("error", err.Error()))
+	// 	return nil, errors.Wrapf(xerr.NewErrCode(xerr.ERROR), "queryExchangeRate error: %s", err.Error())
+	// }
+	// convertAmount := int64(amount * 100)
+	convertAmount := int64(info.Amount)
+
 	// create payment
 	result, err := client.CreatePaymentSheet(&stripe.Order{
 		OrderNo:   info.OrderNo,
 		Subscribe: strconv.FormatInt(info.SubscribeId, 10),
 		Amount:    convertAmount,
-		Currency:  "cny",
+		Currency:  "usd",
 		Payment:   stripeConfig.Payment,
 	},
 		&stripe.User{

@@ -268,26 +268,27 @@ func (l *OAuthLoginGetTokenLogic) register(email, avatar, method, openid string)
 	}
 	var userInfo *user.User
 	err := l.svcCtx.UserModel.Transaction(l.ctx, func(db *gorm.DB) error {
-		err := db.Model(&user.User{}).Where("email = ?", email).First(&userInfo).Error
-		if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
-			return err
-		}
-		if userInfo.Id != 0 {
-			return errors.Wrapf(xerr.NewErrCode(xerr.UserExist), "user email exist: %v", email)
-		}
+		// err := db.Model(&user.User{}).Where("email = ?", email).First(&userInfo).Error
+		// if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		// 	return err
+		// }
+		// if userInfo.Id != 0 {
+		// 	return errors.Wrapf(xerr.NewErrCode(xerr.UserExist), "user email exist: %v", email)
+		// }
+		var err error
 		userInfo = &user.User{
 			Avatar: avatar,
 		}
+		userInfo.ReferCode = uuidx.UserInviteCode(userInfo.Id)
 		if err := db.Create(userInfo).Error; err != nil {
 			return errors.Wrapf(xerr.NewErrCode(xerr.DatabaseInsertError), "create user info failed: %v", err.Error())
 		}
-		// Generate ReferCode
-		userInfo.ReferCode = uuidx.UserInviteCode(userInfo.Id)
-		// Update ReferCode
-		err = db.Where("id = ?", userInfo.Id).Update("refer_code", userInfo.ReferCode).Error
-		if err != nil {
-			return errors.Wrapf(xerr.NewErrCode(xerr.DatabaseUpdateError), "update refer code failed: %v", err.Error())
-		}
+		// // Generate ReferCode
+		// // Update ReferCode
+		// err = db.Where("id = ?", userInfo.Id).Update("refer_code", userInfo.ReferCode).Error
+		// if err != nil {
+		// 	return errors.Wrapf(xerr.NewErrCode(xerr.DatabaseUpdateError), "update refer code failed: %v", err.Error())
+		// }
 		authMethod := &user.AuthMethods{
 			UserId:         userInfo.Id,
 			AuthType:       method,

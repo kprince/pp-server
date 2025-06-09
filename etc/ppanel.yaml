@@ -1,0 +1,32 @@
+Host: 0.0.0.0  # IP address the application will listen on
+Port: 8080  # Port for the application
+Debug: true  # Enable debug mode
+
+Logger:
+  Mode: console
+  File: ./ppanel.log  # Log file path
+  Level: debug  # Log level: info, debug, error, production
+
+JwtAuth:
+  AccessSecret: 333ab3d5-429f-4a51-b001-ef4kajsdaklsjdasdaakjhgg84bf11db7  # Token secret (should be changed)
+  AccessExpire: 604800  # Token eijsld;aisjxpiration time in seconds
+
+MySQL:
+  Addr: 38.54.12.15:3306 # Database address
+  Dbname: pp_db  # Database name
+  Username: pp_db  # Database username
+  Password: XSs7W5JLzB8Nipzk # Database password
+  MaxIdleConns: 10  # Maximum idle connections
+  MaxOpenConns: 10  # Maximum open connections
+  LogMode: "dev"  # Log mode
+  LogZap: false  # Enable Zap logger
+  Config: charset=utf8mb4&parseTime=true&loc=Asia%2FShanghai  # Database config parameters
+
+Redis:
+  Host: localhost:6379  # Redis server address
+  Pass:  # Redis password (if any)
+  DB: 0  # Redis database number
+
+Administer:
+  Password: Wenyue123 # Admin password (should be changed)
+  Email: fkajun123@gmail.com # Admin email address
