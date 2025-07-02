@@ -35,7 +35,7 @@ func (l *UpdateNodeLogic) UpdateNode(req *types.UpdateNodeRequest) error {
 	if err != nil {
 		return errors.Wrapf(xerr.NewErrCode(xerr.DatabaseQueryError), "find server error: %v", err)
 	}
-	tool.DeepCopy(nodeInfo, req)
+	tool.DeepCopy(nodeInfo, req, tool.CopyWithIgnoreEmpty(false))
 	config, err := json.Marshal(req.Config)
 	if err != nil {
 		return err
@@ -48,8 +48,14 @@ func (l *UpdateNodeLogic) UpdateNode(req *types.UpdateNodeRequest) error {
 		return err
 	}
 
-	if len(req.Tags) > 0 {
+	// 处理Tags字段
+	switch {
+	case len(req.Tags) > 0:
+		// 有Tags，进行连接
 		nodeInfo.Tags = strings.Join(req.Tags, ",")
+	default:
+		// 空数组，清空Tags
+		nodeInfo.Tags = ""
 	}
 
 	nodeInfo.City = req.City
@@ -75,6 +81,26 @@ func (l *UpdateNodeLogic) UpdateNode(req *types.UpdateNodeRequest) error {
 		}
 		if cfg.SecurityConfig.RealityServerPort == 0 {
 			cfg.SecurityConfig.RealityServerPort = 443
+		}
+		config, _ = json.Marshal(cfg)
+		nodeInfo.Config = string(config)
+	} else if req.Protocol == "shadowsocks" {
+		var cfg types.Shadowsocks
+		if err = json.Unmarshal(config, &cfg); err != nil {
+			l.Errorf("[CreateNode] Unmarshal Shadowsocks Config Error: %v", err.Error())
+			return errors.Wrapf(xerr.NewErrCode(xerr.ERROR), "json.Unmarshal error: %v", err.Error())
+		}
+		if strings.Contains(cfg.Method, "2022") {
+			var length int
+			switch cfg.Method {
+			case "2022-blake3-aes-128-gcm":
+				length = 16
+			default:
+				length = 32
+			}
+			if len(cfg.ServerKey) != length {
+				cfg.ServerKey = tool.GenerateCipher(cfg.ServerKey, length)
+			}
 		}
 		config, _ = json.Marshal(cfg)
 		nodeInfo.Config = string(config)

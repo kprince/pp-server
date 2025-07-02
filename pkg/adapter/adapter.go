@@ -10,20 +10,28 @@ import (
 	"github.com/perfect-panel/server/pkg/adapter/shadowrocket"
 	"github.com/perfect-panel/server/pkg/adapter/singbox"
 	"github.com/perfect-panel/server/pkg/adapter/surfboard"
+	"github.com/perfect-panel/server/pkg/adapter/v2rayn"
 )
+
+type Config struct {
+	Nodes []*server.Server
+	Rules []*server.RuleGroup
+	Tags  map[string][]*server.Server
+}
 
 type Adapter struct {
 	proxy.Adapter
 }
 
-func NewAdapter(nodes []*server.Server, rules []*server.RuleGroup) *Adapter {
+func NewAdapter(cfg *Config) *Adapter {
 	// 转换服务器列表
-	proxies := adapterProxies(nodes)
+	proxies := adapterProxies(cfg.Nodes)
 	// 生成代理组
 	proxyGroup, region := generateProxyGroup(proxies)
+
 	// 转换规则组
 	// g, r := adapterRules(rules)
-	_, r := adapterRules(rules)
+	_, r := adapterRules(cfg.Rules)
 	// 加入兜底节点
 	// for i, group := range g {
 	// 	if len(group.Proxies) == 0 {
@@ -69,4 +77,7 @@ func (m *Adapter) BuildShadowrocket(uuid string, userInfo shadowrocket.UserInfo)
 
 func (m *Adapter) BuildSurfboard(siteName string, user surfboard.UserInfo) []byte {
 	return surfboard.BuildSurfboard(m.Adapter, siteName, user)
+}
+func (m *Adapter) BuildV2rayN(uuid string) []byte {
+	return v2rayn.NewV2rayN(m.Adapter).Build(uuid)
 }

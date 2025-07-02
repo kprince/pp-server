@@ -2,6 +2,7 @@ package subscribe
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 	"time"
 
@@ -77,7 +78,7 @@ func (l *SubscribeLogic) getUserSubscribe(token string) (*user.Subscribe, error)
 		return nil, errors.Wrapf(xerr.NewErrCode(xerr.DatabaseQueryError), "find subscribe error: %v", err.Error())
 	}
 
-	if userSub.Status != 1 {
+	if userSub.Status > 1 {
 		l.Infow("[Generate Subscribe]subscribe is not available", logger.Field("status", int(userSub.Status)), logger.Field("token", token))
 		return nil, errors.Wrapf(xerr.NewErrCode(xerr.SubscribeNotAvailable), "subscribe is not available")
 	}
@@ -116,12 +117,17 @@ func (l *SubscribeLogic) getServers(userSub *user.Subscribe) ([]*server.Server, 
 	serverIds := tool.StringToInt64Slice(subDetails.Server)
 	groupIds := tool.StringToInt64Slice(subDetails.ServerGroup)
 
+	l.Debugf("[Generate Subscribe]serverIds: %v, groupIds: %v", serverIds, groupIds)
+
 	servers, err := l.svc.ServerModel.FindServerDetailByGroupIdsAndIds(l.ctx.Request.Context(), groupIds, serverIds)
+
+	l.Debugf("[Query Subscribe]found servers: %v", len(servers))
+
 	if err != nil {
 		l.Errorw("[Generate Subscribe]find server details error: %v", logger.Field("error", err.Error()))
 		return nil, errors.Wrapf(xerr.NewErrCode(xerr.DatabaseQueryError), "find server details error: %v", err.Error())
 	}
-
+	logger.Debugf("[Generate Subscribe]found servers: %v", len(servers))
 	return servers, nil
 }
 
@@ -174,10 +180,33 @@ func (l *SubscribeLogic) getRules() ([]*server.RuleGroup, error) {
 }
 
 func (l *SubscribeLogic) buildClientConfig(req *types.SubscribeRequest, userSub *user.Subscribe, servers []*server.Server, rules []*server.RuleGroup) ([]byte, string, error) {
-	proxyManager := adapter.NewAdapter(servers, rules)
+	tags := make(map[string][]*server.Server)
+
+	serverTags, err := l.svc.ServerModel.FindServerTags(l.ctx)
+	if err != nil {
+		l.Errorw("[Generate Subscribe]find server tags error: %v", logger.Field("error", err.Error()))
+		return nil, "", errors.Wrapf(xerr.NewErrCode(xerr.DatabaseQueryError), "find server tags error: %v", err.Error())
+	}
+	// Deduplicate tags
+	serverTags = tool.RemoveDuplicateElements(serverTags...)
+	for _, tag := range serverTags {
+		s, err := l.svc.ServerModel.FindServersByTag(l.ctx.Request.Context(), tag)
+		if err != nil {
+			l.Errorw("[Generate Subscribe]find servers by tag error: %v", logger.Field("error", err.Error()))
+			continue
+		}
+		if len(s) > 0 {
+			tags[tag] = s
+		}
+	}
+
+	proxyManager := adapter.NewAdapter(&adapter.Config{
+		Nodes: servers,
+		Rules: rules,
+		Tags:  tags,
+	})
 	clientType := l.getClientType(req)
 	var resp []byte
-	var err error
 
 	l.Logger.Info(fmt.Sprintf("[Generate Subscribe] %s", clientType), logger.Field("ua", req.UA), logger.Field("flag", req.Flag))
 
@@ -217,6 +246,9 @@ func (l *SubscribeLogic) buildClientConfig(req *types.SubscribeRequest, userSub 
 			SubscribeURL: subsURL,
 		})
 		l.setSurfboardHeaders()
+	case "v2rayn":
+		resp = proxyManager.BuildV2rayN(userSub.UUID)
+
 	default:
 		resp = proxyManager.BuildGeneral(userSub.UUID)
 	}
@@ -228,13 +260,13 @@ func (l *SubscribeLogic) buildClientConfig(req *types.SubscribeRequest, userSub 
 }
 
 func (l *SubscribeLogic) setClashHeaders() {
-	l.ctx.Header("content-disposition", fmt.Sprintf("tattachment;filename*=UTF-8''%s.yaml", l.svc.Config.Site.SiteName))
+	l.ctx.Header("content-disposition", fmt.Sprintf("attachment;filename*=UTF-8''%s", url.QueryEscape(l.svc.Config.Site.SiteName)))
 	l.ctx.Header("Profile-Update-Interval", "24")
 	l.ctx.Header("Content-Type", "application/octet-stream; charset=UTF-8")
 }
 
 func (l *SubscribeLogic) setSurfboardHeaders() {
-	l.ctx.Header("content-disposition", fmt.Sprintf("attachment;filename*=UTF-8''%s.conf", l.svc.Config.Site.SiteName))
+	l.ctx.Header("content-disposition", fmt.Sprintf("attachment;filename*=UTF-8''%s.conf", url.QueryEscape(l.svc.Config.Site.SiteName)))
 	l.ctx.Header("Content-Type", "application/octet-stream; charset=UTF-8")
 }
 
@@ -262,6 +294,7 @@ func (l *SubscribeLogic) getClientType(req *types.SubscribeRequest) string {
 		"shadowrocket": "shadowrocket",
 		"loon":         "loon",
 		"surfboard":    "surfboard",
+		"v2rayn":       "v2rayn",
 	}
 
 	findClient := func(s string) string {

@@ -95,7 +95,7 @@ func addProxyToGroup(proxyName, groupName string, groups []proxy.Group) []proxy.
 	}
 	groups = append(groups, proxy.Group{
 		Name:    groupName,
-		Type:    "select",
+		Type:    proxy.GroupTypeSelect,
 		Proxies: []string{proxyName},
 	})
 	return groups
@@ -105,7 +105,7 @@ func adapterRules(groups []*server.RuleGroup) (proxyGroup []proxy.Group, rules [
 	for _, group := range groups {
 		proxyGroup = append(proxyGroup, proxy.Group{
 			Name:    group.Name,
-			Type:    "select",
+			Type:    proxy.GroupTypeSelect,
 			Proxies: RemoveEmptyString(strings.Split(group.Tags, ",")),
 		})
 		rules = append(rules, strings.Split(group.Rules, "\n")...)
@@ -113,19 +113,31 @@ func adapterRules(groups []*server.RuleGroup) (proxyGroup []proxy.Group, rules [
 	return
 }
 
+func adapterTags(tags map[string][]*server.Server, group []proxy.Group) (proxyGroup []proxy.Group) {
+	for tag, servers := range tags {
+		proxies := adapterProxies(servers)
+		if len(proxies) != 0 {
+			for _, p := range proxies {
+				group = addProxyToGroup(p.Name, tag, group)
+			}
+		}
+	}
+	return group
+}
+
 func generateProxyGroup(servers []proxy.Proxy) (proxyGroup []proxy.Group, region []string) {
 	// 设置手动选择分组
 	proxyGroup = append(proxyGroup, []proxy.Group{
 		{
 			Name:     "智能线路",
-			Type:     "url-test",
+			Type:     proxy.GroupTypeURLTest,
 			Proxies:  make([]string, 0),
 			URL:      "https://www.gstatic.com/generate_204",
 			Interval: 300,
 		},
 		{
 			Name:    "手动选择",
-			Type:    "select",
+			Type:    proxy.GroupTypeSelect,
 			Proxies: []string{"智能线路"},
 		},
 	}...)
@@ -134,8 +146,10 @@ func generateProxyGroup(servers []proxy.Proxy) (proxyGroup []proxy.Group, region
 		if node.Country != "" {
 			proxyGroup = addProxyToGroup(node.Name, node.Country, proxyGroup)
 			region = append(region, node.Country)
+
 			proxyGroup = addProxyToGroup(node.Country, "智能线路", proxyGroup)
 		}
+
 		proxyGroup = addProxyToGroup(node.Name, "手动选择", proxyGroup)
 	}
 	proxyGroup = addProxyToGroup("DIRECT", "手动选择", proxyGroup)
@@ -195,6 +209,22 @@ func RemoveEmptyString(arr []string) []string {
 	for _, str := range arr {
 		if str != "" {
 			result = append(result, str)
+		}
+	}
+	return result
+}
+
+func RemoveEmptyGroup(arr []proxy.Group) []proxy.Group {
+	var result []proxy.Group
+	var removeNames []string
+	for _, group := range arr {
+		if group.Name == "手动选择" {
+			group.Proxies = tool.RemoveStringElement(group.Proxies, removeNames...)
+		}
+		if len(group.Proxies) > 0 {
+			result = append(result, group)
+		} else {
+			removeNames = append(removeNames, group.Name)
 		}
 	}
 	return result

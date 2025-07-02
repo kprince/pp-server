@@ -45,7 +45,7 @@ func GenerateBase64General(data []proxy.Proxy, uuid string) []byte {
 		links = append(links, p)
 	}
 	var rsp []byte
-	rsp = base64.RawStdEncoding.AppendEncode(rsp, []byte(strings.Join(links, "\n")))
+	rsp = base64.RawStdEncoding.AppendEncode(rsp, []byte(strings.Join(links, "\r\n")))
 	return rsp
 }
 
@@ -69,12 +69,21 @@ func buildProxy(data proxy.Proxy, uuid string) string {
 }
 
 func ShadowsocksUri(data proxy.Proxy, uuid string) string {
-	ss := data.Option.(proxy.Shadowsocks)
-	// sip002
+	ss, ok := data.Option.(proxy.Shadowsocks)
+	if !ok {
+		return ""
+	}
+
+	password := uuid
+	// SIP022 AEAD-2022 Ciphers
+	if strings.Contains(ss.Method, "2022") {
+		serverKey, userKey := proxy.GenerateShadowsocks2022Password(ss, uuid)
+		password = fmt.Sprintf("%s:%s", serverKey, userKey)
+	}
+
 	u := &url.URL{
-		Scheme: "ss",
-		// 还没有写 2022 的
-		User:     url.User(strings.TrimSuffix(base64.URLEncoding.EncodeToString([]byte(ss.Method+":"+uuid)), "=")),
+		Scheme:   "ss",
+		User:     url.User(strings.TrimSuffix(base64.URLEncoding.EncodeToString([]byte(ss.Method+":"+password)), "=")),
 		Host:     net.JoinHostPort(data.Server, strconv.Itoa(data.Port)),
 		Fragment: data.Name,
 	}
@@ -94,10 +103,22 @@ func VmessUri(data proxy.Proxy, uuid string) string {
 		Port: fmt.Sprint(data.Port),
 		ID:   uuid,
 		Aid:  "0",
-		Net:  vmess.Transport,
-		// Type: "?",
-		Host: transport.Host,
-		Path: transport.Path,
+		Ps:   data.Name,
+		Net:  "tcp",
+	}
+
+	switch vmess.Transport {
+	case "websocket":
+		s.Net = "ws"
+		s.Path = transport.Path
+		s.Host = transport.Host
+	case "grpc":
+		s.Net = "grpc"
+		s.Path = transport.ServiceName
+	case "httpupgrade":
+		s.Net = "http"
+		s.Path = transport.Path
+		s.Host = transport.Host
 	}
 
 	if vmess.Security == "tls" {
@@ -117,23 +138,36 @@ func VlessUri(data proxy.Proxy, uuid string) string {
 
 	var query = make(url.Values)
 	setQuery(&query, "flow", vless.Flow)
-	setQuery(&query, "type", vless.Transport)
 	setQuery(&query, "security", vless.Security)
+	setQuery(&query, "encryption", "none")
 
 	switch vless.Transport {
-	case "ws", "http", "httpupgrade":
+	case "websocket":
+		setQuery(&query, "type", "ws")
+		setQuery(&query, "host", transportConfig.Host)
+		setQuery(&query, "path", transportConfig.Path)
+
+	case "http2", "httpupgrade":
+		setQuery(&query, "type", "http")
 		setQuery(&query, "path", transportConfig.Path)
 		setQuery(&query, "host", transportConfig.Host)
 	case "grpc":
+		setQuery(&query, "type", "grpc")
 		setQuery(&query, "serviceName", transportConfig.ServiceName)
-	case "meek":
-		setQuery(&query, "url", transportConfig.Host)
 	}
 
-	setQuery(&query, "sni", securityConfig.SNI)
-	setQuery(&query, "fp", securityConfig.Fingerprint)
-	setQuery(&query, "pbk", securityConfig.RealityPublicKey)
-	setQuery(&query, "sid", securityConfig.RealityShortId)
+	if vless.Security == "tls" {
+		setQuery(&query, "sni", securityConfig.SNI)
+		setQuery(&query, "fp", securityConfig.Fingerprint)
+	} else if vless.Security == "reality" {
+		setQuery(&query, "pbk", securityConfig.RealityPublicKey)
+		setQuery(&query, "sid", securityConfig.RealityShortId)
+		setQuery(&query, "sni", securityConfig.SNI)
+		setQuery(&query, "fp", securityConfig.Fingerprint)
+		setQuery(&query, "servername", securityConfig.SNI)
+		setQuery(&query, "spx", "/")
+
+	}
 
 	u := url.URL{
 		Scheme:   "vless",
@@ -151,23 +185,21 @@ func TrojanUri(data proxy.Proxy, uuid string) string {
 	securityConfig := trojan.SecurityConfig
 
 	var query = make(url.Values)
-	setQuery(&query, "type", trojan.Transport)
 	setQuery(&query, "security", trojan.Security)
 
 	switch trojan.Transport {
-	case "ws", "http", "httpupgrade":
+	case "websocket":
+		setQuery(&query, "type", "ws")
 		setQuery(&query, "path", transportConfig.Path)
 		setQuery(&query, "host", transportConfig.Host)
 	case "grpc":
+		setQuery(&query, "type", "grpc")
 		setQuery(&query, "serviceName", transportConfig.ServiceName)
-	case "meek":
-		setQuery(&query, "url", transportConfig.Host)
+	default:
+		setQuery(&query, "type", "tcp")
+		setQuery(&query, "path", transportConfig.Path)
+		setQuery(&query, "host", transportConfig.Host)
 	}
-
-	setQuery(&query, "sni", securityConfig.SNI)
-	setQuery(&query, "fp", securityConfig.Fingerprint)
-	setQuery(&query, "pbk", securityConfig.RealityPublicKey)
-	setQuery(&query, "sid", securityConfig.RealityShortId)
 
 	if securityConfig.AllowInsecure {
 		setQuery(&query, "allowInsecure", "1")
@@ -219,7 +251,7 @@ func TuicUri(data proxy.Proxy, uuid string) string {
 
 	setQuery(&query, "congestion_control", "bbr")
 
-	if tuic.SecurityConfig.SNI == "" {
+	if tuic.SecurityConfig.SNI != "" {
 		setQuery(&query, "sni", tuic.SecurityConfig.SNI)
 	} else {
 		setQuery(&query, "disable_sni", "1")

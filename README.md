@@ -2,14 +2,15 @@
 
 <div align="center">
 
-[![License](https://img.shields.io/github/license/perfect-panel/ppanel-server)](LICENSE)
-![Go Version](https://img.shields.io/badge/Go-1.21%2B-blue)
+[![License](https://img.shields.io/github/license/perfect-panel/server)](LICENSE)
+[![Go Version](https://img.shields.io/badge/Go-1.21%2B-blue)](https://go.dev/)
+[![Go Report Card](https://goreportcard.com/badge/github.com/perfect-panel/server)](https://goreportcard.com/report/github.com/perfect-panel/server)
 [![Docker](https://img.shields.io/badge/Docker-Available-blue)](Dockerfile)
-[![CI/CD](https://img.shields.io/github/actions/workflow/status/perfect-panel/ppanel-server/release.yml)](.github/workflows/release.yml)
+[![CI/CD](https://img.shields.io/github/actions/workflow/status/perfect-panel/server/release.yml)](.github/workflows/release.yml)
 
 **PPanel is a pure, professional, and perfect open-source proxy panel tool, designed for learning and practical use.**
 
-[English](README.md) | [中文](README_zh.md) | [Report Bug](https://github.com/perfect-panel/ppanel-server/issues/new) | [Request Feature](https://github.com/perfect-panel/ppanel-server/issues/new)
+[English](README.md) | [中文](readme_zh.md) | [Report Bug](https://github.com/perfect-panel/server/issues/new) | [Request Feature](https://github.com/perfect-panel/server/issues/new)
 
 </div>
 
@@ -108,7 +109,7 @@ proxy services. Built with Go, it emphasizes performance, security, and scalabil
 
 Explore the full API documentation:
 
-- **Swagger**: [https://ppanel.dev/swagger/ppanel](https://ppanel.dev/swagger/ppanel)
+- **Swagger**: [https://ppanel.dev/en-US/swagger/ppanel](https://ppanel.dev/swagger/ppanel)
 
 The documentation covers all endpoints, request/response formats, and authentication details.
 
@@ -123,6 +124,10 @@ The documentation covers all endpoints, request/response formats, and authentica
 ## 🌐 Official Website
 
 Visit [ppanel.dev](https://ppanel.dev/) for more details.
+
+## 🏛 Architecture
+
+![Architecture Diagram](./doc/image/architecture-en.png)
 
 ## 📁 Directory Structure
 
@@ -188,6 +193,86 @@ Supported platforms include:
 Contributions are welcome! Please follow the [Contribution Guidelines](CONTRIBUTING.md) for bug fixes, features, or
 documentation improvements.
 
+## ✨ Special Thanks
+
+A huge thank you to the following outstanding open-source projects that have provided invaluable support for this
+project's development! 🚀
+
+<div style="overflow-x: auto;">
+<table style="width: 100%; border-collapse: collapse; margin: 20px 0;">
+  <thead>
+    <tr style="background-color: #f5f5f5;">
+      <th style="padding: 10px; text-align: center;">Project</th>
+      <th style="padding: 10px; text-align: left;">Description</th>
+      <th style="padding: 10px; text-align: center;">Project</th>
+      <th style="padding: 10px; text-align: left;">Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td align="center" style="padding: 15px; vertical-align: middle;">
+        <a href="https://gin-gonic.com/" style="text-decoration: none;">
+          <img src="https://raw.githubusercontent.com/gin-gonic/logo/master/color.png" width="25" alt="Gin" style="border-radius: 8px;" /><br/>
+          <strong>Gin</strong><br/>
+          <img src="https://img.shields.io/github/stars/gin-gonic/gin?style=social" alt="Gin Stars" />
+        </a>
+      </td>
+      <td style="padding: 15px; vertical-align: middle;">
+        High-performance Go Web framework<br/>
+      </td>
+      <td align="center" style="padding: 15px; vertical-align: middle;">
+        <a href="https://gorm.io/" style="text-decoration: none;">
+          <img src="https://gorm.io/gorm.svg" width="50" alt="Gorm" style="border-radius: 8px;" /><br/>
+          <strong>Gorm</strong><br/>
+          <img src="https://img.shields.io/github/stars/go-gorm/gorm?style=social" alt="Gorm Stars" />
+        </a>
+      </td>
+      <td style="padding: 15px; vertical-align: middle;">
+        Powerful Go ORM framework<br/>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" style="padding: 15px; vertical-align: middle;">
+        <a href="https://github.com/hibiken/asynq" style="text-decoration: none;">
+          <img src="https://user-images.githubusercontent.com/11155743/114697792-ffbfa580-9d26-11eb-8e5b-33bef69476dc.png" width="50" alt="Asynq" style="border-radius: 8px;" /><br/>
+          <strong>Asynq</strong><br/>
+          <img src="https://img.shields.io/github/stars/hibiken/asynq?style=social" alt="Asynq Stars" />
+        </a>
+      </td>
+      <td style="padding: 15px; vertical-align: middle;">
+        Asynchronous task queue for Go<br/>
+      </td>
+      <td align="center" style="padding: 15px; vertical-align: middle;">
+        <a href="https://goswagger.io/" style="text-decoration: none;">
+          <img src="https://goswagger.io/go-swagger/logo.png" width="30" alt="Go-Swagger" style="border-radius: 8px;" /><br/>
+          <strong>Go-Swagger</strong><br/>
+          <img src="https://img.shields.io/github/stars/go-swagger/go-swagger?style=social" alt="Go-Swagger Stars" />
+        </a>
+      </td>
+      <td style="padding: 15px; vertical-align: middle;">
+        Comprehensive Go Swagger toolkit<br/>
+      </td>
+    </tr>
+    <tr>
+      <td align="center" style="padding: 15px; vertical-align: middle;">
+        <a href="https://go-zero.dev/" style="text-decoration: none;">
+          <img src="https://raw.githubusercontent.com/zeromicro/zero-doc/main/doc/images/go-zero.png" width="30" alt="Go-Zero" style="border-radius: 8px;" /><br/>
+          <strong>Go-Zero</strong><br/>
+          <img src="https://img.shields.io/github/stars/zeromicro/go-zero?style=social" alt="Go-Zero Stars" />
+        </a>
+      </td>
+      <td colspan="3" style="padding: 15px; vertical-align: middle;">
+        Go microservices framework (this project's API generator is built on Go-Zero)<br/>
+      </td>
+    </tr>
+  </tbody>
+</table>
+</div>
+
+---
+
+🎉 **Salute to Open Source**: Thank you to the open-source community for making development simpler and more efficient!
+Please give these projects a ⭐ to support the open-source movement!
 ## 📄 License
 
 This project is licensed under the [GPL-3.0 License](LICENSE).

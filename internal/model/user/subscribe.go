@@ -55,7 +55,6 @@ func (m *defaultUserModel) FindOneSubscribe(ctx context.Context, id int64) (*Sub
 		return conn.Model(&Subscribe{}).Where("id = ?", id).First(&data).Error
 	})
 	return &data, err
-
 }
 
 func (m *defaultUserModel) FindUsersSubscribeBySubscribeId(ctx context.Context, subscribeId int64) ([]*Subscribe, error) {
@@ -76,8 +75,12 @@ func (m *defaultUserModel) QueryUserSubscribe(ctx context.Context, userId int64,
 		// 获取当前时间向前推 7 天
 		sevenDaysAgo := time.Now().Add(-7 * 24 * time.Hour)
 		// 基础条件查询
-		conn = conn.Model(&Subscribe{}).Where("`user_id` = ? and `status` IN ?", userId, status)
-		return conn.Where("`expire_time` > ? OR `finished_at` >= ?", now, sevenDaysAgo).
+		conn = conn.Model(&Subscribe{}).Where("`user_id` = ?", userId)
+		if len(status) > 0 {
+			conn = conn.Where("`status` IN ?", status)
+		}
+		// 订阅过期时间大于当前时间或者订阅结束时间大于当前时间
+		return conn.Where("`expire_time` > ? OR `finished_at` >= ? OR `expire_time` = ?", now, sevenDaysAgo, time.UnixMilli(0)).
 			Preload("Subscribe").
 			Find(&list).Error
 	})
@@ -106,12 +109,16 @@ func (m *defaultUserModel) FindOneSubscribeByToken(ctx context.Context, token st
 
 // UpdateSubscribe updates a record.
 func (m *defaultUserModel) UpdateSubscribe(ctx context.Context, data *Subscribe, tx ...*gorm.DB) error {
+	old, err := m.FindOneSubscribe(ctx, data.Id)
+	if err != nil {
+		return err
+	}
 	return m.ExecCtx(ctx, func(conn *gorm.DB) error {
 		if len(tx) > 0 {
 			conn = tx[0]
 		}
-		return conn.Model(&Subscribe{}).Where("token = ?", data.Token).Save(data).Error
-	}, m.getSubscribeCacheKey(data)...)
+		return conn.Model(&Subscribe{}).Where("id = ?", data.Id).Save(data).Error
+	}, m.getSubscribeCacheKey(old)...)
 }
 
 // DeleteSubscribe deletes a record.
