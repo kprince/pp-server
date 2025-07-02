@@ -5,7 +5,13 @@ import (
 	"encoding/json"
 	"strings"
 
+<<<<<<< HEAD
 	"github.com/perfect-panel/server/pkg/device"
+=======
+	"github.com/hibiken/asynq"
+	"github.com/perfect-panel/server/pkg/device"
+	queue "github.com/perfect-panel/server/queue/types"
+>>>>>>> 2d25e7b20cfe339a21859d51ab24cb7682ce7a04
 
 	"github.com/perfect-panel/server/internal/svc"
 	"github.com/perfect-panel/server/internal/types"

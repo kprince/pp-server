@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/perfect-panel/server/internal/model/payment"
+	"github.com/perfect-panel/server/pkg/google"
 
 	"github.com/perfect-panel/server/internal/model/subscribe"
 	"github.com/redis/go-redis/v9"
@@ -88,6 +89,21 @@ func (m *customOrderModel) UpdateOrderStatus(ctx context.Context, orderNo string
 	orderInfo, err := m.FindOneByOrderNo(ctx, orderNo)
 	if err != nil {
 		return err
+	}
+	if orderInfo.Gclid != "" && orderInfo.Status == 2 {
+
+		gac := google.NewGAClient()
+		gac.SendEvent("purchase", orderInfo.UserId, map[string]any{
+			"trasaction_id": orderInfo.Id,
+			"currency":      "USD",
+			"value":         orderInfo.Amount,
+			"items": []map[string]any{
+				{
+					"item_id":   orderInfo.SubscribeId,
+					"item_name": orderInfo.SubscribeName,
+				},
+			},
+		})
 	}
 	return m.ExecCtx(ctx, func(conn *gorm.DB) error {
 		if len(tx) > 0 {
