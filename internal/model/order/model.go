@@ -91,19 +91,22 @@ func (m *customOrderModel) UpdateOrderStatus(ctx context.Context, orderNo string
 		return err
 	}
 	if orderInfo.Gclid != "" && orderInfo.Status == 2 {
-
-		gac := google.NewGAClient()
-		gac.SendEvent("purchase", orderInfo.UserId, map[string]any{
-			"trasaction_id": orderInfo.Id,
-			"currency":      "USD",
-			"value":         orderInfo.Amount,
-			"items": []map[string]any{
-				{
-					"item_id":   orderInfo.SubscribeId,
-					"item_name": orderInfo.SubscribeName,
+		//query first paid order
+		firstOrder, _ := m.FindOneByUserId(ctx, orderInfo.UserId, 2)
+		if firstOrder == nil {
+			gac := google.NewGAClient()
+			gac.SendEvent("purchase", orderInfo.UserId, map[string]any{
+				"trasaction_id": orderInfo.OrderNo,
+				"currency":      "USD",
+				"value":         orderInfo.Amount,
+				"items": []map[string]any{
+					{
+						"item_id":   orderInfo.SubscribeId,
+						"item_name": orderInfo.SubscribeName,
+					},
 				},
-			},
-		})
+			})
+		}
 	}
 	return m.ExecCtx(ctx, func(conn *gorm.DB) error {
 		if len(tx) > 0 {
