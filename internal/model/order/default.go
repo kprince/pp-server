@@ -12,8 +12,9 @@ import (
 
 var _ Model = (*customOrderModel)(nil)
 var (
-	cacheOrderIdPrefix = "cache:order:id:"
-	cacheOrderNoPrefix = "cache:order:no:"
+	cacheOrderIdPrefix      = "cache:order:id:"
+	cacheOrderNoPrefix      = "cache:order:no:"
+	cacheUserIdStatusPrefix = "cache:order:userIdStatus:"
 )
 
 type (
@@ -25,6 +26,7 @@ type (
 		Insert(ctx context.Context, data *Order, tx ...*gorm.DB) error
 		FindOne(ctx context.Context, id int64) (*Order, error)
 		FindOneByOrderNo(ctx context.Context, orderNo string) (*Order, error)
+		FindOneByUserId(ctx context.Context, userId, status any) (*Order, error)
 		Update(ctx context.Context, data *Order, tx ...*gorm.DB) error
 		Delete(ctx context.Context, id int64, tx ...*gorm.DB) error
 		Transaction(ctx context.Context, fn func(db *gorm.DB) error) error
@@ -97,6 +99,20 @@ func (m *defaultOrderModel) FindOneByOrderNo(ctx context.Context, orderNo string
 	var resp Order
 	err := m.QueryCtx(ctx, &resp, OrderNoKey, func(conn *gorm.DB, v interface{}) error {
 		return conn.Model(&Order{}).Where("`order_no` = ?", orderNo).First(&resp).Error
+	})
+	switch {
+	case err == nil:
+		return &resp, nil
+	default:
+		return nil, err
+	}
+}
+
+func (m *defaultOrderModel) FindOneByUserId(ctx context.Context, userId, status any) (*Order, error) {
+	OrderNoKey := fmt.Sprintf("%v%v", userId, status)
+	var resp Order
+	err := m.QueryCtx(ctx, &resp, OrderNoKey, func(conn *gorm.DB, v interface{}) error {
+		return conn.Model(&Order{}).Where("`user_id` = ? ", userId).Where("`status` = ?", status).First(&resp).Error
 	})
 	switch {
 	case err == nil:

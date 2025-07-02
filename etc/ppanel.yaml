@@ -12,10 +12,10 @@ JwtAuth:
   AccessExpire: 604800  # Token eijsld;aisjxpiration time in seconds
 
 MySQL:
-  Addr: 38.54.12.15:3306 # Database address
-  Dbname: pp_db  # Database name
-  Username: pp_db  # Database username
-  Password: XSs7W5JLzB8Nipzk # Database password
+  Addr: localhost:3306 # Database address
+  Dbname: netfluxion  # Database name
+  Username: root  # Database username
+  Password: Wenyue123 # Database password
   MaxIdleConns: 10  # Maximum idle connections
   MaxOpenConns: 10  # Maximum open connections
   LogMode: "dev"  # Log mode

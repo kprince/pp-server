@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/perfect-panel/server/pkg/constant"
+	"github.com/perfect-panel/server/pkg/google"
 
 	"github.com/perfect-panel/server/pkg/xerr"
 	"github.com/pkg/errors"
@@ -62,7 +63,9 @@ func (l *StripeNotifyLogic) StripeNotify(r *http.Request, w http.ResponseWriter)
 		l.Errorw("[StripeNotify] error", logger.Field("errors", err.Error()))
 		return err
 	}
+
 	orderInfo, err := l.svcCtx.OrderModel.FindOneByOrderNo(l.ctx, notify.OrderNo)
+
 	if err != nil {
 		l.Logger.Error("[StripeNotify] Find order failed", logger.Field("error", err.Error()), logger.Field("orderNo", notify.OrderNo))
 		return errors.Wrapf(xerr.NewErrCode(xerr.OrderNotExist), "order not exist: %v", notify.OrderNo)
@@ -71,10 +74,26 @@ func (l *StripeNotifyLogic) StripeNotify(r *http.Request, w http.ResponseWriter)
 		if orderInfo.Status == 5 {
 			return nil
 		}
+		//query first paid order
+		firstOrder, _ := l.svcCtx.OrderModel.FindOneByUserId(l.ctx, orderInfo.Id, 2)
 		// update order status
 		err = l.svcCtx.OrderModel.UpdateOrderStatus(l.ctx, notify.OrderNo, 2)
 		if err != nil {
 			return err
+		}
+		if orderInfo.Gclid != "" && firstOrder == nil {
+			gac := google.NewGAClient()
+			gac.SendEvent("purchase", orderInfo.UserId, map[string]any{
+				"trasaction_id": orderInfo.Id,
+				"currency":      "USD",
+				"value":         orderInfo.Amount,
+				"items": []map[string]any{
+					{
+						"item_id":   orderInfo.SubscribeId,
+						"item_name": orderInfo.SubscribeName,
+					},
+				},
+			})
 		}
 		// create ActivateOrder task
 		payload := types.ForthwithActivateOrderPayload{

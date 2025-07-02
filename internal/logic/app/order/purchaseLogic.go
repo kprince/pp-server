@@ -159,6 +159,8 @@ func (l *PurchaseLogic) Purchase(req *types.PurchaseOrderRequest) (resp *types.P
 		Status:         1,
 		IsNew:          isNew,
 		SubscribeId:    req.SubscribeId,
+		SubscribeName:  sub.Name,
+		Gclid:          req.Gclid,
 	}
 	// Database transaction
 	err = l.svcCtx.DB.Transaction(func(db *gorm.DB) error {

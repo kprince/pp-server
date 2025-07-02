@@ -6,14 +6,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hibiken/asynq"
 	"github.com/perfect-panel/server/internal/model/server"
 	"github.com/perfect-panel/server/internal/svc"
 	"github.com/perfect-panel/server/internal/types"
 	"github.com/perfect-panel/server/pkg/logger"
 	"github.com/perfect-panel/server/pkg/tool"
 	"github.com/perfect-panel/server/pkg/xerr"
-	queue "github.com/perfect-panel/server/queue/types"
 	"github.com/pkg/errors"
 )
 
@@ -84,23 +82,23 @@ func (l *CreateNodeLogic) CreateNode(req *types.CreateNodeRequest) error {
 		return errors.Wrapf(xerr.NewErrCode(xerr.DatabaseInsertError), "create server error: %v", err)
 	}
 
-	// Marshal the task payload
-	payload, err := json.Marshal(queue.GetNodeCountry{
-		Protocol:   serverInfo.Protocol,
-		ServerAddr: serverInfo.ServerAddr,
-	})
-	if err != nil {
-		l.Errorw("[GetNodeCountry]: Marshal Error", logger.Field("error", err.Error()))
-		return errors.Wrap(xerr.NewErrCode(xerr.ERROR), "Failed to marshal task payload")
-	}
-	// Create a queue task
-	task := asynq.NewTask(queue.ForthwithGetCountry, payload)
-	// Enqueue the task
-	taskInfo, err := l.svcCtx.Queue.Enqueue(task)
-	if err != nil {
-		l.Errorw("[GetNodeCountry]: Enqueue Error", logger.Field("error", err.Error()), logger.Field("payload", string(payload)))
-		return errors.Wrap(xerr.NewErrCode(xerr.ERROR), "Failed to enqueue task")
-	}
-	l.Infow("[GetNodeCountry]: Enqueue Success", logger.Field("taskID", taskInfo.ID), logger.Field("payload", string(payload)))
+	// // Marshal the task payload
+	// payload, err := json.Marshal(queue.GetNodeCountry{
+	// 	Protocol:   serverInfo.Protocol,
+	// 	ServerAddr: serverInfo.ServerAddr,
+	// })
+	// if err != nil {
+	// 	l.Errorw("[GetNodeCountry]: Marshal Error", logger.Field("error", err.Error()))
+	// 	return errors.Wrap(xerr.NewErrCode(xerr.ERROR), "Failed to marshal task payload")
+	// }
+	// // Create a queue task
+	// task := asynq.NewTask(queue.ForthwithGetCountry, payload)
+	// // Enqueue the task
+	// taskInfo, err := l.svcCtx.Queue.Enqueue(task)
+	// if err != nil {
+	// 	l.Errorw("[GetNodeCountry]: Enqueue Error", logger.Field("error", err.Error()), logger.Field("payload", string(payload)))
+	// 	return errors.Wrap(xerr.NewErrCode(xerr.ERROR), "Failed to enqueue task")
+	// }
+	// l.Infow("[GetNodeCountry]: Enqueue Success", logger.Field("taskID", taskInfo.ID), logger.Field("payload", string(payload)))
 	return nil
 }

@@ -22,10 +22,12 @@ type Order struct {
 	TradeNo        string    `gorm:"type:varchar(255);default:null;comment:Trade No"`
 	Status         uint8     `gorm:"type:tinyint(1);not null;default:1;comment:Order Status: 1: Pending, 2: Paid, 3:Close, 4: Failed, 5:Finished;"`
 	SubscribeId    int64     `gorm:"type:bigint;not null;default:0;comment:Subscribe Id"`
+	SubscribeName  string    `gorm:"type:varchar(255);not null;default:'';comment:Subscribe Name"`
 	SubscribeToken string    `gorm:"type:varchar(255);default:null;comment:Renewal Subscribe Token"`
 	IsNew          bool      `gorm:"type:tinyint(1);not null;default:0;comment:Is New Order"`
 	CreatedAt      time.Time `gorm:"<-:create;comment:Create Time"`
 	UpdatedAt      time.Time `gorm:"comment:Update Time"`
+	Gclid          string    `gorm:"type:varchar(255);not null;default:'';comment:gclid"`
 }
 
 type OrdersTotal struct {

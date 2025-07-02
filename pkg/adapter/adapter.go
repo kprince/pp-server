@@ -22,15 +22,16 @@ func NewAdapter(nodes []*server.Server, rules []*server.RuleGroup) *Adapter {
 	// 生成代理组
 	proxyGroup, region := generateProxyGroup(proxies)
 	// 转换规则组
-	g, r := adapterRules(rules)
+	// g, r := adapterRules(rules)
+	_, r := adapterRules(rules)
 	// 加入兜底节点
-	for i, group := range g {
-		if len(group.Proxies) == 0 {
-			g[i].Proxies = append([]string{"DIRECT"}, region...)
-		}
-	}
+	// for i, group := range g {
+	// 	if len(group.Proxies) == 0 {
+	// 		g[i].Proxies = append([]string{"DIRECT"}, region...)
+	// 	}
+	// }
 	// 合并代理组
-	proxyGroup = append(proxyGroup, g...)
+	// proxyGroup = append(proxyGroup, g...)
 	return &Adapter{
 		Adapter: proxy.Adapter{
 			Proxies: proxies,

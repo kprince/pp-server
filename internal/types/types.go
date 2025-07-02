@@ -1298,6 +1298,7 @@ type PurchaseOrderRequest struct {
 	Quantity    int64  `json:"quantity" validate:"required,gt=0"`
 	Payment     int64  `json:"payment,omitempty"`
 	Coupon      string `json:"coupon,omitempty"`
+	Gclid       string `json:"Gclid,omitempty"`
 }
 
 type PurchaseOrderResponse struct {
@@ -2143,6 +2144,7 @@ type UserRegisterRequest struct {
 	IP        string `header:"X-Original-Forwarded-For"`
 	UserAgent string `header:"User-Agent"`
 	CfToken   string `json:"cf_token,optional"`
+	Gclid   string `json:"gclid,optional"`
 }
 
 type UserStatistics struct {

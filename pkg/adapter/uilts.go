@@ -79,6 +79,10 @@ func addNode(data *server.Server, host string, port int) *proxy.Proxy {
 		return nil
 	}
 	node.Option = option
+	//CLOUDFLARE代理的流量，默认走HTTPS，但服务器运行在80端口，因此客户端要改成443
+	if node.Port == 80 {
+		node.Port = 443
+	}
 	return &node
 }
 
@@ -104,7 +108,7 @@ func adapterRules(groups []*server.RuleGroup) (proxyGroup []proxy.Group, rules [
 			Type:    "select",
 			Proxies: RemoveEmptyString(strings.Split(group.Tags, ",")),
 		})
-		rules = append(rules, strings.Split(group.Rules, "/n")...)
+		rules = append(rules, strings.Split(group.Rules, "\n")...)
 	}
 	return
 }

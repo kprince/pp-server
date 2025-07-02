@@ -26,6 +26,7 @@ type User struct {
 	UserDevices           []Device      `gorm:"foreignKey:UserId;references:Id"`
 	CreatedAt             time.Time     `gorm:"<-:create;comment:Creation Time"`
 	UpdatedAt             time.Time     `gorm:"comment:Update Time"`
+	From                  string        `gorm:"type:varchar(20);default:'';comment:User source"`
 }
 
 func (User) TableName() string {

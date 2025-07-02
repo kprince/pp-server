@@ -12,6 +12,7 @@ import (
 	"github.com/perfect-panel/server/internal/svc"
 	"github.com/perfect-panel/server/internal/types"
 	"github.com/perfect-panel/server/pkg/constant"
+	"github.com/perfect-panel/server/pkg/google"
 	"github.com/perfect-panel/server/pkg/jwt"
 	"github.com/perfect-panel/server/pkg/logger"
 	"github.com/perfect-panel/server/pkg/tool"
@@ -93,6 +94,10 @@ func (l *UserRegisterLogic) UserRegister(req *types.UserRegisterRequest) (resp *
 	if referer != nil {
 		userInfo.RefererId = referer.Id
 	}
+	// Save user source
+	if req.Gclid != "" {
+		userInfo.From = "google"
+	}
 	err = l.svcCtx.UserModel.Transaction(l.ctx, func(db *gorm.DB) error {
 		// Save user information
 		if err := db.Create(userInfo).Error; err != nil {
@@ -144,6 +149,11 @@ func (l *UserRegisterLogic) UserRegister(req *types.UserRegisterRequest) (resp *
 	}
 	loginStatus := true
 	defer func() {
+		//Send register event to GA4
+		if req.Gclid != "" {
+			gac := google.NewGAClient()
+			gac.SendEvent("sign_up", userInfo.Id, map[string]any{})
+		}
 		if token != "" && userInfo.Id != 0 {
 			if err := l.svcCtx.UserModel.InsertLoginLog(l.ctx, &user.LoginLog{
 				UserId:    userInfo.Id,
